@@ -90,12 +90,12 @@ Endpoints:
 ```
 
 ## Optional: Use OpenAI for classification
-
-Paste OpenAI API key and set `OPENAI_API_KEY` in `.env`
 ```bash
 # Don't upload Gmail API key onto github
 cp .env.example .env
 ```
+Paste and set `OPENAI_API_KEY` in `.env`
+
 Modify `classify_email` in `email_classify.py` to use GPT-3.5
 
 ## Project Structure
@@ -106,7 +106,7 @@ personal-ai-ops/
 ├─ gmail_tool.py       # Gmail API integration
 ├─ email_classify.py   # Email classification logic
 ├─ requirements.txt    # Python dependencies
-├─ credentials.json    # Gmail OAuth credentials (not committed)
+├─ credentials.json    # Gmail OAuth credentials
 ├─ token.pkl           # Saved OAuth token (generated)
 └─ .env                # Environment variables (API keys)
 ```
