@@ -55,9 +55,11 @@ pip install -r requirements.txt
 
 - Create a new project and enable Gmail API
 
-- Download credentials.json and place it in the project root
+- Download `credentials.json` and place it in the project root
 
 - Add your Gmail address as a test user if the app is unverified
+
+- Do not upload `credentials.json` onto Github
 
 5. Run the FastAPI server
 ```bash
@@ -91,8 +93,11 @@ Endpoints:
 
 ## Optional: Use OpenAI for classification
 
-Uncomment and set `OPENAI_API_KEY` in `.env`
-
+Paste OpenAI API key and set `OPENAI_API_KEY` in `.env`
+```bash
+# Don't upload Gmail API key onto github
+cp .env.example .env
+```
 Modify `classify_email` in `email_classify.py` to use GPT-3.5
 
 ## Project Structure
