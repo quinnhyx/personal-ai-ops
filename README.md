@@ -59,8 +59,6 @@ pip install -r requirements.txt
 
 - Add your Gmail address as a test user if the app is unverified
 
-- Do not upload `credentials.json` onto Github
-
 5. Run the FastAPI server
 ```bash
 uvicorn main:app --reload
