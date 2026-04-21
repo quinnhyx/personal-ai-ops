@@ -1,13 +1,10 @@
 import os
-from openai import OpenAI
 from dotenv import load_dotenv
 import re
 
-load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # For openai
-# def classify_email(snippet):
+# def classify_email_openai(snippet):
 #     prompt = f"Classify this email into Job / Newsletter / Alert / Personal:\n\n{snippet}"
 #     response = client.chat.completions.create(
 #         model="gpt-3.5-turbo",
@@ -16,6 +13,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 #     )
 #     category = response.choices[0].message.content.strip()
 #     return category
+
 
 CATEGORIES = [
     "job",
@@ -36,7 +34,7 @@ def normalize_category(cat: str) -> str:
     """Lowercase, remove non-alphanumeric chars for matching."""
     return re.sub(r"[^a-z0-9]", "", cat.lower())
 
-# manually classify
+# Main classification function using keyword matching
 def classify_email(snippet):
     """Classify email into multiple common categories using keywords."""
     text = snippet.lower()

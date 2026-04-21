@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Personal AI Ops Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #f4f4f4; }
+    tr:hover { background-color: #f1f1f1; }
+    .category { font-weight: bold; padding: 2px 6px; border-radius: 4px; color: white; }
+    .category { font-weight: bold; padding: 2px 6px; border-radius: 4px; color: white; }
+    .Job { background-color: #1f77b4; }
+    .Newsletter { background-color: #ff7f0e; }
+    .Alert { background-color: #d62728; }
+    .Ad { background-color: #2ca02c; }
+    .Finance { background-color: #8c564b; }
+    .Travel { background-color: #9467bd; }
+    .SocialMedia { background-color: #17becf; }
+    .Education { background-color: #e377c2; }
+    .Event { background-color: #7f7f7f; }
+    .Shopping { background-color: #bcbd22; }
+    .Personal { background-color: #ff9896; }
+    .Other { background-color: #c7c7c7; }
+  </style>
+</head>
+<body>
+  <h1>Personal AI Ops Dashboard</h1>
+  <p>Welcome to your Personal AI Ops Dashboard! Here you can view and manage your categorized emails within the past 24 hours.</p>
+  <div>
+    <label>Loading emails:</label>
+    <progress id="emailProgress" value="0" max="100"></progress>
+    <span id="progressText">0%</span>
+  </div>
+  
+  <script>
+  async function checkProgress() {
+    const res = await fetch('/progress');
+    const data = await res.json();
+    const progressElem = document.getElementById('emailProgress');
+    const textElem = document.getElementById('progressText');
+
+    if (data.loading) {
+      progressElem.value = data.progress;
+      textElem.textContent = data.progress + '%';
+      setTimeout(checkProgress, 500); // 每 0.5 秒轮询
+    } else {
+      progressElem.value = 100;
+      textElem.textContent = '100%';
+      loadEmails(); // 进度完成后加载表格
+    }
+  }
+  // 页面加载时调用
+  checkProgress();
+  </script>
+
+  
+  <!-- Category Summary Table -->
+  <h2>Email Category Statistics</h2>
+  <table id="categorySummaryTable">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>Count</th>
+        <th>Percentage</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <script>
+  function buildTableSummary(emails) {
+    const tbody = document.querySelector('#categorySummaryTable tbody');
+    tbody.innerHTML = '';
+
+    const counts = {};
+    let total = emails.length;
+
+    // Count emails by category
+    emails.forEach(email => {
+      const cat = email.Category;
+      counts[cat] = (counts[cat] || 0) + 1;
+    });
+
+    // Sort categories by count (descending)
+    const sortedCategories = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+
+    // Build table rows
+    sortedCategories.forEach(category => {
+      const count = counts[category];
+      const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : 0;
+      const categoryClass = category.replace(/[^a-zA-Z]/g, "");
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span class="category ${categoryClass}">${category}</span></td>
+        <td>${count}</td>
+        <td>${percentage}%</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+  </script>
+
+  <div>
+    <label>Filter by category: </label>
+    <select id="categoryFilter">
+      <option value="">All</option>
+      <option value="job">Job</option>
+      <option value="newsletter">Newsletter</option>
+      <option value="alert">Alert</option>
+      <option value="ad">Promotion / Ad</option>
+      <option value="finance">Finance</option>
+      <option value="travel">Travel</option>
+      <option value="socialmedia">Social Media</option>
+      <option value="education">Education</option>
+      <option value="event">Event</option>
+      <option value="shopping">Shopping</option>
+      <option value="personal">Personal</option>
+      <option value="other">Other</option>
+    </select>
+    <button onclick="loadEmails()">Filter</button>
+  </div>
+  <div id="loadingMsg" style="display:none; font-weight:bold; padding:10px;">
+    ✉️ Emails are loading...
+  </div>
+
+
+  <table id="emailsTable">
+    <thead>
+      <tr>
+        <th>From</th>
+        <th>Title</th>
+        <th>Description</th>
+        <th>Category</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <p id="noEmailsMsg" style="display:none; color:red; margin-top:10px;">No emails found.</p>
+
+  <script>
+  async function loadEmails() {
+    const category = document.getElementById('categoryFilter').value;
+    const url = category ? `/emails/${category}` : '/emails';
+
+    const tbody = document.querySelector('#emailsTable tbody');
+    const noEmailsMsg = document.getElementById('noEmailsMsg');
+    const loadingMsg = document.getElementById('loadingMsg');
+
+    tbody.innerHTML = '';
+    noEmailsMsg.style.display = 'none';
+
+    // 先显示 loading
+    loadingMsg.style.display = 'block';
+
+    try {
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        loadingMsg.style.display = 'none';
+        noEmailsMsg.style.display = 'block';
+        noEmailsMsg.textContent = 'Error fetching emails: ' + response.statusText;
+        return;
+      }
+
+      const data = await response.json();
+
+      // 如果后端还在加载
+      if (data.loading) {
+        setTimeout(loadEmails, 1000);
+        return;
+      }
+
+      // 加载完成，隐藏 loading
+      loadingMsg.style.display = 'none';
+
+      const emails = data;
+
+      if (!Array.isArray(emails) || emails.length === 0) {
+        noEmailsMsg.style.display = 'block';
+        noEmailsMsg.textContent = 'No emails found';
+        return;
+      }
+
+      buildTableSummary(emails);
+
+      emails.forEach(email => {
+        const tr = document.createElement('tr');
+        const categoryClass = email.Category.replace(/[^a-zA-Z]/g, "");
+
+        tr.innerHTML = `
+          <td>${email.From}</td>
+          <td>${email.Title}</td>
+          <td>${email.Description}</td>
+          <td><span class="category ${categoryClass}">${email.Category}</span></td>
+          <td>
+            <button onclick="checkReply('${email.Description.replace(/'/g, "\\'")}')">
+              Check Reply
+            </button>
+            <button onclick="generateReply('${email.Description.replace(/'/g, "\\'")}')">
+              Generate Reply
+            </button>
+          </td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+
+    } catch (err) {
+      loadingMsg.style.display = 'none';
+      console.error(err);
+    }
+  }
+  async function checkReply(description) {
+  try {
+    const res = await fetch('/needs-reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description })
+    });
+
+    const data = await res.json();
+    alert("Reply needed: " + data.result);
+  } catch (err) {
+    alert("Error: " + err);
+  }
+}
+
+async function generateReply(description) {
+  try {
+    const res = await fetch('/generate-reply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ description })
+    });
+
+    const data = await res.json();
+    alert(data.reply);
+  } catch (err) {
+    alert("Error: " + err);
+  }
+}
+
+  window.onload = loadEmails;
+  </script>
+
+</body>
+</html>
