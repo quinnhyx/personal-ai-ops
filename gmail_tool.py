@@ -3,7 +3,7 @@ import pickle
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import re
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
@@ -82,3 +82,40 @@ def get_message_snippet(message_id):
     service = get_gmail_service()
     message = service.users().messages().get(userId='me', id=message_id).execute()
     return message['snippet']
+
+
+def get_message_detail(message_id):
+    service = get_gmail_service()
+    message = service.users().messages().get(
+        userId='me',
+        id=message_id,
+        format='metadata',
+        metadataHeaders=['Subject', 'From', 'To']
+    ).execute()
+
+    headers = message.get('payload', {}).get('headers', [])
+    detail = {
+        "title": "(No Subject)",
+        "sender": "(Unknown Sender)",
+        "to": "Me",
+        "snippet": message.get("snippet", ""),
+        "timestamp": _format_internal_date(message.get("internalDate")),
+    }
+
+    for h in headers:
+        if h['name'] == 'Subject':
+            detail['title'] = h['value']
+        elif h['name'] == 'From':
+            match = re.match(r'([^<]+)', h['value'])
+            detail['sender'] = match.group(1).strip() if match else h['value']
+        elif h['name'] == 'To':
+            detail['to'] = h['value']
+
+    return detail
+
+
+def _format_internal_date(internal_date):
+    if not internal_date:
+        return ""
+    timestamp = int(internal_date) / 1000
+    return datetime.fromtimestamp(timestamp, tz=timezone.utc).isoformat()

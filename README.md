@@ -1,112 +1,100 @@
 # Personal AI Ops Agent
-A lightweight personal AI-powered email assistant that fetches your Gmail messages, classifies them into categories, and serves them via an API. Designed for quick insights, filtering, and dashboard integration.
 
-## Features
-- Fetch emails from Gmail received in the past 24 hours
+A local-first AI Email Assistant that fetches Gmail messages, classifies them with rules, decides whether each email needs a reply, and drafts replies only when needed.
 
-- Classify emails into multiple categories:
+## Core Rules
 
-- Job, Newsletter, Alert, Ad, Finance, Travel
+- No OpenAI API.
+- No paid-token model is required.
+- Default LLM backend is local Ollama at `http://127.0.0.1:11434`.
+- DeepSeek is supported only when explicitly configured.
+- If the LLM is unavailable, reply drafting falls back to local rules.
 
-- Social Media, Education, Event, Shopping
+## Pipeline
 
-- Personal, Other
+1. Fetch Gmail messages from the past 24 hours into `EMAIL_CACHE_RAW`.
+2. Classify emails with keyword rules into:
+   `Job`, `Newsletter`, `Alert`, `Finance`, `Travel`, `Social Media`, `Education`, `Shopping`, `Personal`, `Other`.
+3. Decide `reply_required` with rules only.
+4. Generate an English reply with the configured free/local LLM only when `reply_required = true`.
 
-- Return email subject, sender name, snippet, and category
+## LLM Backends
 
-- Filter emails by category via `/emails/{category}` endpoint
+Default local setup:
 
-- Manual keyword-based classification (no paid API required)
-
-- Ready for integration with dashboards or automation workflows
-
-## Tech Stack
-- **Backend**: Python, FastAPI
-
-- **Email API**: Gmail API (`google-api-python-client`)
-
-- **Optional AI**: OpenAI GPT-3.5 for more advanced classification
-
-- **Environment**: `python-dotenv` for API keys, virtual environment `.venv`
-
-## Setup & Installation
-1. Clone the repository
 ```bash
-git clone https://github.com/YOUR_USERNAME/personal-ai-ops.git
-cd personal-ai-ops
-```
-2. Create a virtual environment and activate it
-```bash
-python -m venv .venv
-# Windows PowerShell
-.\.venv\Scripts\Activate.ps1
-# Windows CMD
-.\.venv\Scripts\activate.bat
-# macOS / Linux
-source .venv/bin/activate
-```
-3. Install dependencies
-```bash
-pip install -r requirements.txt
-```
-4. Set up Gmail API
-
-- Go to Google Cloud Console
-
-- Create a new project and enable Gmail API
-
-- Download `credentials.json` and place it in the project root
-
-- Add your Gmail address as a test user if the app is unverified
-
-5. Run the FastAPI server
-```bash
-uvicorn main:app --reload
-```
-Server runs on: `http://127.0.0.1:8000`
-
-Endpoints:
-
-`/emails` → all emails with categories
-
-`/emails/{category}` → filtered emails by category
-
-## Example Response
-```JSON
-[
-  {
-    "title": "Monster Job of the Week",
-    "sender": "Taylor Monster",
-    "snippet": "Find out who is hiring for your role...",
-    "category": "Job"
-  },
-  {
-    "title": "$1000 Kikoff Scholarship",
-    "sender": "Kikoff Credit",
-    "snippet": "A new special eligibility scholarship has arrived...",
-    "category": "Newsletter"
-  }
-]
+ollama pull qwen3:8b
+ollama serve
 ```
 
-## Optional: Use OpenAI for classification
+Environment:
+
 ```bash
-# Don't upload Gmail API key onto github
 cp .env.example .env
 ```
-Paste and set `OPENAI_API_KEY` in `.env`
 
-Modify `classify_email` in `email_classify.py` to use GPT-3.5
+Default `.env`:
+
+```env
+LLM_BACKEND=ollama
+OLLAMA_BASE_URL=http://127.0.0.1:11434/api/generate
+OLLAMA_MODEL=qwen3:8b
+```
+
+Optional DeepSeek-compatible endpoint:
+
+```env
+LLM_BACKEND=deepseek
+DEEPSEEK_API_KEY=your_key
+DEEPSEEK_BASE_URL=https://api.deepseek.com/chat/completions
+DEEPSEEK_MODEL=deepseek-chat
+```
+
+## Run
+
+```bash
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
+
+Open:
+
+```text
+http://127.0.0.1:8000
+```
+
+## API
+
+- `GET /health`
+- `GET /progress`
+- `GET /emails`
+- `GET /emails/raw`
+- `GET /emails/{category}`
+- `POST /emails/{email_id}/generate-reply`
+- `POST /api/emails/{email_id}/draft`
+- `POST /api/emails/{email_id}/status/{status}`
+- `POST /refresh`
+
+The draft endpoint currently returns draft text plus a Gmail URL placeholder. It does not send email.
+
+Legacy-compatible endpoints:
+
+- `POST /needs-reply`
+- `POST /generate-reply`
 
 ## Project Structure
-```
+
+```text
 personal-ai-ops/
-│
-├─ main.py             # FastAPI app with endpoints
-├─ gmail_tool.py       # Gmail API integration
-├─ email_classify.py   # Email classification logic
-├─ requirements.txt    # Python dependencies
-├─ credentials.json    # Gmail OAuth credentials
-├─ token.pkl           # Saved OAuth token (generated)
-└─ .env                # Environment variables (API keys)
+├─ main.py              # FastAPI app
+├─ pipeline.py          # Email pipeline, raw cache, processed cache, AI cache
+├─ gmail_tool.py        # Gmail API integration
+├─ email_category.py    # Rule-based classification
+├─ reply_rules.py       # Rule-based reply-required detection and fallback templates
+├─ llm_client.py        # Unified Ollama / DeepSeek LLM interface
+├─ frontend/index.html  # Dashboard
+├─ requirements.txt
+├─ credentials.json
+├─ token.pkl
+└─ .env
 ```

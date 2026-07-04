@@ -1,30 +1,14 @@
-import os
-from dotenv import load_dotenv
 import re
-
-
-# For openai
-# def classify_email_openai(snippet):
-#     prompt = f"Classify this email into Job / Newsletter / Alert / Personal:\n\n{snippet}"
-#     response = client.chat.completions.create(
-#         model="gpt-3.5-turbo",
-#         messages=[{"role": "user", "content": prompt}],
-#         max_tokens=30
-#     )
-#     category = response.choices[0].message.content.strip()
-#     return category
 
 
 CATEGORIES = [
     "job",
     "newsletter",
     "alert",
-    "ad",
     "finance",
     "travel",
     "social media",
     "education",
-    "event",
     "shopping",
     "personal",
     "other"
@@ -45,8 +29,6 @@ def classify_email(snippet):
         return "Newsletter"
     elif any(word in text for word in ["alert", "security", "system", "warning", "codespace", "password"]):
         return "Alert"
-    elif any(word in text for word in ["offer", "sale", "deal", "promotion", "discount", "free", "win", "coupon"]):
-        return "Ad"
     elif any(word in text for word in ["invoice", "payment", "receipt", "bill", "transaction", "account", "bank"]):
         return "Finance"
     elif any(word in text for word in ["booking", "flight", "hotel", "reservation", "itinerary", "ticket"]):
@@ -55,9 +37,7 @@ def classify_email(snippet):
         return "Social Media"
     elif any(word in text for word in ["course", "class", "assignment", "exam", "lecture", "school", "university", "scholarship"]):
         return "Education"
-    elif any(word in text for word in ["webinar", "event", "meet", "conference", "register", "join"]):
-        return "Event"
-    elif any(word in text for word in ["order", "shipped", "tracking", "delivery", "purchase", "amazon", "ebay"]):
+    elif any(word in text for word in ["order", "shipped", "tracking", "delivery", "purchase", "amazon", "ebay", "offer", "sale", "deal", "promotion", "discount", "coupon"]):
         return "Shopping"
     elif any(word in text for word in ["hi", "hello", "dear", "friend", "family", "meet", "call"]):
         return "Personal"

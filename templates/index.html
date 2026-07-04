@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Personal AI Ops Dashboard</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand-row">
+        <div class="brand-icon">✦</div>
+        <div class="brand-name">Personal AI Ops</div>
+      </div>
+
+      <nav class="sidebar-nav" id="sidebarNav">
+        <button class="nav-item active" data-filter="all"><span>⌂ Overview</span><b id="navAll">0</b></button>
+        <button class="nav-item" data-filter="all"><span>✉ Emails</span><b id="navEmails">0</b></button>
+        <button class="nav-item" data-filter="needs_reply"><span>◇ Needs Reply</span><b id="navNeeds">0</b></button>
+        <button class="nav-item" data-filter="pending_review"><span>◌ Pending Review</span><b id="navPending">0</b></button>
+        <button class="nav-item" data-filter="draft_created"><span>✎ Drafts</span><b id="navDrafts">0</b></button>
+        <button class="nav-item" data-filter="no_reply_needed"><span>✓ No Reply Needed</span><b id="navNo">0</b></button>
+        <button class="nav-item"><span>⚙ Rules</span></button>
+        <button class="nav-item"><span>✧ Prompts</span></button>
+        <button class="nav-item"><span>▥ Analytics</span></button>
+        <button class="nav-item"><span>♢ Alerts</span><b id="navAlerts">0</b></button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="model-card">
+          <div class="model-icon">✦</div>
+          <div>
+            <div class="model-title">AI Model</div>
+            <div class="model-name" id="modelName">qwen3:8b</div>
+            <div class="online-row"><span class="online-dot"></span>Online</div>
+          </div>
+        </div>
+        <button class="secondary-button sync-button" id="syncBtn">↻ Sync Gmail</button>
+        <div class="last-sync" id="lastSync">Last sync: --</div>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div class="top-nav">
+          <div class="top-nav-item active">⌂ Dashboard</div>
+          <div class="top-nav-item">▥ Analytics</div>
+          <div class="top-nav-item">⚙ Rules</div>
+          <div class="top-nav-item">⚙ Settings</div>
+        </div>
+        <div class="top-status">
+          <span class="online-dot"></span>
+          <span id="ollamaStatus">Ollama (qwen3:8b)</span>
+          <span>⌄</span>
+          <div class="user-pill">Y</div>
+        </div>
+      </header>
+
+      <section class="hero-row">
+        <div>
+          <h1>Good morning, Yixuan 👋</h1>
+          <p>Here’s your email overview and AI assistant</p>
+        </div>
+        <div class="hero-actions">
+          <select id="categorySelect" class="select-control">
+            <option value="all">Categories: All</option>
+          </select>
+          <select id="dateRange" class="select-control">
+            <option>Jul 2 – Jul 3, 2026</option>
+            <option>Last 7 days</option>
+            <option>Last 14 days</option>
+          </select>
+          <button class="primary-button" id="refreshBtn">↻ Refresh</button>
+        </div>
+      </section>
+
+      <section class="stats-grid">
+        <article class="stat-card"><div class="stat-icon purple">✉</div><div><p>Total Emails</p><h2 id="statTotal">0</h2><span id="statTotalHint">Loaded from Gmail</span></div></article>
+        <article class="stat-card"><div class="stat-icon blue">⏱</div><div><p>Needs Reply</p><h2 id="statNeeds">0</h2><span>Confidence ≥ 70%</span></div></article>
+        <article class="stat-card"><div class="stat-icon green">✦</div><div><p>Drafts Ready</p><h2 id="statDrafts">0</h2><span>Ready to review</span></div></article>
+        <article class="stat-card"><div class="stat-icon orange">⌕</div><div><p>Auto-Filtered</p><h2 id="statNo">0</h2><span>No reply needed</span></div></article>
+        <article class="stat-card"><div class="stat-icon amber">◌</div><div><p>Pending Review</p><h2 id="statPending">0</h2><span>Needs your call</span></div></article>
+      </section>
+
+      <section class="dashboard-grid">
+        <div class="left-column">
+          <article class="category-card">
+            <div class="card-heading"><h2>Email Categories</h2></div>
+            <div class="category-content">
+              <div class="donut" id="categoryDonut"><span id="donutTotal">0</span><small>Total</small></div>
+              <div class="category-list" id="categoryList"></div>
+            </div>
+          </article>
+
+          <article class="policy-card">
+            <div class="card-heading">
+              <h2>AI Reply Policy</h2>
+              <button class="secondary-button">Edit Rules</button>
+            </div>
+            <p>Only reply to emails that:</p>
+            <ul>
+              <li>Require action or response</li>
+              <li>Are personalized, not newsletters or alerts</li>
+              <li>Are not automated receipts or notifications</li>
+            </ul>
+            <div class="smart-filter">✣ Smart filtering is ON</div>
+          </article>
+        </div>
+
+        <div class="right-column">
+          <article class="email-panel">
+            <div class="panel-header">
+              <div><h2>Needs Reply <span>(AI-Filtered)</span></h2></div>
+              <span class="count-pill" id="panelCount">0 emails</span>
+              <select id="sortSelect" class="sort-select">
+                <option value="newest">Sort: Newest</option>
+                <option value="confidence">Sort: Confidence</option>
+              </select>
+            </div>
+            <div class="tab-row" id="tabRow">
+              <button class="tab-chip active" data-tab="all">All</button>
+              <button class="tab-chip" data-tab="Job">Job</button>
+              <button class="tab-chip" data-tab="Personal">Personal</button>
+              <button class="tab-chip" data-tab="Social Media">Social Media</button>
+              <button class="tab-chip" data-tab="Other">Other</button>
+            </div>
+            <div class="email-list" id="emailList"></div>
+          </article>
+
+          <article class="detail-panel" id="detailPanel">
+            <div class="empty-state">Select an email to inspect details and generate a Gmail draft.</div>
+          </article>
+        </div>
+      </section>
+
+      <section class="feature-strip">
+        <div><span>✣</span><b>AI Filters & Classifies</b><p>Automatically identifies which emails need replies</p></div>
+        <div><span>✎</span><b>Generate Smart Reply</b><p>AI writes context-aware, professional replies</p></div>
+        <div><span>✉</span><b>Open in Gmail Draft</b><p>Review and edit in Gmail draft, never auto-send</p></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
